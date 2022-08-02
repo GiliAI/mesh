@@ -61,6 +61,9 @@ class build_deflate_cgal(Command):
 
         CGAL_dir_deflate = os.path.abspath(self.build_temp)
 
+        if os.name == 'nt': # if on windows, MSVC compiler will look for the Release folder
+            CGAL_dir_deflate = os.path.join(CGAL_dir_deflate, 'Release')
+
         log.info('[CGAL] deflating cgal from "%s" to "%s"', CGAL_archive, CGAL_dir_deflate)
         if not os.path.exists(os.path.join(CGAL_dir_deflate, 'CGAL-4.7')):
             import tarfile
@@ -181,8 +184,10 @@ def _get_all_extensions():
     except:
         return []
 
-    # valid only for gcc/clang
-    extra_args = ['-O3']
+    if os.name == 'nt': # assume MSVC on windows
+        extra_args = [] # optimization is automatically enabled, /Ox not needed
+    else :
+        extra_args = ['-O3'] # valid only for gcc/clang
 
     import sys
     if sys.platform.find('linux') > -1:
@@ -229,15 +234,7 @@ additional_kwargs = {}
 if has_setup_tools:
     # setup tools required for the 'setup_requires' ...
     additional_kwargs['setup_requires'] = ['setuptools', 'numpy']
-    additional_kwargs['install_requires'] = [
-        'numpy >= 1.8',
-        'opencv-python',
-        'pillow',
-        'pyopengl',
-        'pyyaml',
-        'pyzmq',
-        'scipy',
-    ]
+    additional_kwargs['install_requires'] = ['numpy >= 1.8', 'scipy', 'pyopengl', 'pyyaml', 'pyzmq', 'opencv-python']
     additional_kwargs['zip_safe'] = not all_extensions
     additional_kwargs['test_suite'] = "tests"
     additional_kwargs['namespace_packages'] = [namespace_package]
@@ -274,8 +271,5 @@ setup(name='%s-mesh' % namespace_package,
       description='Mesh and MeshViewer utilities',
       license='See LICENSE.txt',
       cmdclass=cmdclass,
-      scripts=[
-          "bin/meshviewer"
-      ],
       ** additional_kwargs
       )
